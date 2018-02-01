@@ -9,8 +9,12 @@ public class PlayOffFormat implements Tournament {
     private Logger logger = Logger.getLogger(PlayOffFormat.class);
 
     private List<Player> listOfPlayers = new LinkedList<>();
+    private List<Player> tempListOfPlayers = new LinkedList<>();
+    private List<Player> tempListOfPlayers2 = new LinkedList<>();
     private List<String> listOfPlayersNames = new ArrayList<>();
     private Set<Game> reportedGames = new LinkedHashSet<>();
+
+    Integer roundNumber;
 
     @Override
     public void addPlayer() {
@@ -112,7 +116,11 @@ public class PlayOffFormat implements Tournament {
         for (Player player : listOfPlayers) {
             tempList.add(player);
         }
-        if (tempList.size() < 8) {
+        if (tempList.size() < 2) {}
+        if (tempList.size() < 4) {
+            missingPlayersForLadder = 4 - tempList.size();
+        }
+        else if (tempList.size() < 8) {
             missingPlayersForLadder = 8 - tempList.size();
         }
         else if (tempList.size() < 16){
@@ -126,7 +134,7 @@ public class PlayOffFormat implements Tournament {
         }
     }
 
-    private void draw(List<Player> tempList) {
+    private void draw(List<Player> tempList, List<Player> tempList2) {
         Random rand = new Random();
         Player randomPlayer1;
         Player randomPlayer2;
@@ -139,22 +147,60 @@ public class PlayOffFormat implements Tournament {
                 randomPlayer2 = tempList.get(rand.nextInt(tempList.size()));
             }
             System.out.println(randomPlayer1.getPlayerName() + " vs " + randomPlayer2.getPlayerName());
+            if (randomPlayer1.getPlayerName().equals("next round!") && randomPlayer2.getPlayerName().equals("next round!")) {
+                randomPlayer1.setWins(randomPlayer2.getWins() + 1);
+            }
+            else if (randomPlayer1.getPlayerName().equals("next round!")) {
+                randomPlayer2.setWins(randomPlayer2.getWins() + 1);
+            }
+            else if (randomPlayer2.getPlayerName().equals("next round!")) {
+                randomPlayer1.setWins(randomPlayer2.getWins() + 1);
+            }
+            tempList2.add(randomPlayer1);
             tempList.remove(randomPlayer1);
+            tempList2.add(randomPlayer2);
             tempList.remove(randomPlayer2);
+        }
+    }
+
+    private void sumWinsForEveryPlayer(List<Player> PlayerList, Set<Game> GameList) {
+        for (Player player : PlayerList) {
+            for (Game game : GameList) {
+                if (player.getPlayerName().equals(game.getPlayerOne().getPlayerName())) {
+                    if (game.getPlayerOneRoundsWon() > game.getPlayerTwoRoundsWon()) {
+                        player.setWins(player.getWins() + 1);
+                    }
+                } else if (player.getPlayerName().equals(game.getPlayerTwo().getPlayerName())) {
+                    if (game.getPlayerOneRoundsWon() < game.getPlayerTwoRoundsWon()) {
+                        player.setWins(player.getWins() + 1);
+                    }
+                }
+            }
         }
     }
 
     @Override
     public void showProgress() {
 
-        List<Player> tempListOfPlayers = new LinkedList<>();
-        fillLadder(tempListOfPlayers);
-        while (listOfPlayers.size() > 1) {
-            draw(tempListOfPlayers);
-            for (Game game : reportedGames) {
-                if
+        if (reportedGames.size() == 0) {
+            roundNumber = 1;
+            fillLadder(tempListOfPlayers);
+        }
+        System.out.println("przed draw: " + tempListOfPlayers2);
+        draw(tempListOfPlayers, tempListOfPlayers2);
+        if (tempListOfPlayers2.size() > 1) {
+            sumWinsForEveryPlayer(tempListOfPlayers2, reportedGames);
+            Iterator<Player> iterator = tempListOfPlayers2.iterator();
+            while (iterator.hasNext()) {
+                Player player = iterator.next();
+                if (player.getWins() < roundNumber && reportedGames.size() > 0)
+                    iterator.remove();
             }
         }
+        if (reportedGames.size() > 0) {
+            roundNumber ++;
+        }
+        System.out.println("po showProgress: " + tempListOfPlayers2);
     }
 
     @Override
