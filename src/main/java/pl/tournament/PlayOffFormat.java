@@ -10,7 +10,6 @@ public class PlayOffFormat implements Tournament {
 
     private List<Player> listOfPlayers = new LinkedList<>();
     private List<Player> tempListOfPlayers = new LinkedList<>();
-    private List<Player> tempListOfPlayers2 = new LinkedList<>();
     private List<String> listOfPlayersNames = new ArrayList<>();
     private Set<Game> reportedGames = new LinkedHashSet<>();
 
@@ -130,36 +129,39 @@ public class PlayOffFormat implements Tournament {
             missingPlayersForLadder = 32 - tempList.size();
         }
         for (int i=0; i < missingPlayersForLadder; i++) {
-            tempList.add(new Player("next round!", 0, 0,0));
+            tempList.add(new Player("next round!_" + i, 0, 0,0));
         }
     }
 
-    private void draw(List<Player> tempList, List<Player> tempList2) {
+    private Player[] pair(Player player1, Player player2, List<Player> tempList, List<Player> tempList2) {
+        Random rand = new Random();
+        if (player1.equals(player2) || tempList2.contains(player1) || tempList2.contains(player2)) {
+            player1 = tempList.get(rand.nextInt(tempList.size()));
+            player2 = tempList.get(rand.nextInt(tempList.size()));
+            pair(player1, player2, tempList, tempList2);
+        }
+        return new Player[] {player1,player2};
+    }
+
+    private void draw(List<Player> tempList) {
         Random rand = new Random();
         Player randomPlayer1;
         Player randomPlayer2;
+        List<Player> tempList2 = new LinkedList<>();
         Integer loopLength = tempList.size()/2;
         for (int i=0; i < loopLength; i++) {
             randomPlayer1 = tempList.get(rand.nextInt(tempList.size()));
             randomPlayer2 = tempList.get(rand.nextInt(tempList.size()));
-            if (randomPlayer1.equals(randomPlayer2)) {
-                tempList.remove(randomPlayer2);
-                randomPlayer2 = tempList.get(rand.nextInt(tempList.size()));
+            Player[] pairResult = pair(randomPlayer1,randomPlayer2,tempList, tempList2);
+            System.out.println(pairResult[0].getPlayerName() + " vs " + pairResult[1].getPlayerName());
+            tempList2.add(pairResult[0]);
+            tempList2.add(pairResult[1]);
+            if (pairResult[0].getPlayerName().startsWith("next round!") && !pairResult[1].getPlayerName().startsWith("next round!")) {
+                pairResult[1].setWins(pairResult[1].getWins() + 1);
             }
-            System.out.println(randomPlayer1.getPlayerName() + " vs " + randomPlayer2.getPlayerName());
-            if (randomPlayer1.getPlayerName().equals("next round!") && randomPlayer2.getPlayerName().equals("next round!")) {
-                randomPlayer1.setWins(randomPlayer2.getWins() + 1);
+            else if (pairResult[1].getPlayerName().startsWith("next round!") && !pairResult[0].getPlayerName().startsWith("next round!")) {
+                pairResult[0].setWins(pairResult[0].getWins() + 1);
             }
-            else if (randomPlayer1.getPlayerName().equals("next round!")) {
-                randomPlayer2.setWins(randomPlayer2.getWins() + 1);
-            }
-            else if (randomPlayer2.getPlayerName().equals("next round!")) {
-                randomPlayer1.setWins(randomPlayer2.getWins() + 1);
-            }
-            tempList2.add(randomPlayer1);
-            tempList.remove(randomPlayer1);
-            tempList2.add(randomPlayer2);
-            tempList.remove(randomPlayer2);
         }
     }
 
@@ -184,13 +186,14 @@ public class PlayOffFormat implements Tournament {
 
         if (reportedGames.size() == 0) {
             roundNumber = 1;
-            fillLadder(tempListOfPlayers);
         }
-        System.out.println("przed draw: " + tempListOfPlayers2);
-        draw(tempListOfPlayers, tempListOfPlayers2);
-        if (tempListOfPlayers2.size() > 1) {
-            sumWinsForEveryPlayer(tempListOfPlayers2, reportedGames);
-            Iterator<Player> iterator = tempListOfPlayers2.iterator();
+//        System.out.println("po fillLadder: " + tempListOfPlayers);
+        fillLadder(tempListOfPlayers);
+        draw(tempListOfPlayers);
+//        System.out.println("po draw: " + tempListOfPlayers);
+        if (tempListOfPlayers.size() > 1) {
+            sumWinsForEveryPlayer(tempListOfPlayers, reportedGames);
+            Iterator<Player> iterator = tempListOfPlayers.iterator();
             while (iterator.hasNext()) {
                 Player player = iterator.next();
                 if (player.getWins() < roundNumber && reportedGames.size() > 0)
@@ -200,7 +203,7 @@ public class PlayOffFormat implements Tournament {
         if (reportedGames.size() > 0) {
             roundNumber ++;
         }
-        System.out.println("po showProgress: " + tempListOfPlayers2);
+//        System.out.println("po całym showProgress: " + tempListOfPlayers);
     }
 
     @Override
